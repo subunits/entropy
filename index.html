@@ -32,7 +32,7 @@ code{background:var(--ac2);border-radius:5px;padding:1px 6px}
 <h1>Entropy Explorer</h1>
 <p class="sub">One idea, many forms: thermodynamic, information, quantum, gravitational, and dynamical entropy.</p>
 <nav id="nav" role="tablist" aria-label="Sections"></nav>
-<div id="cat"></div><div id="con" class="hide"></div><div id="calc" class="hide"></div>
+<div id="cat"></div><div id="con" class="hide"></div><div id="calc" class="hide"></div><div id="hk" class="hide"></div>
 </main>
 <script>
 const E=[
@@ -154,7 +154,7 @@ const CON=[["Same functional form","Boltzmann, Gibbs, Shannon and von Neumann al
 ["Gravity","Horizon entropy scales with area, which motivated holography. The generalized second law applies to matter entropy plus A/4G."],
 ["Counting","Boltzmann, Hartley, typical sets, Stirling and Göttsche all reduce entropy to the log of a count."],["Geometry","Information geometry, Perelman flow and gravitational instantons treat entropy as a function on spaces of states or metrics."],["Arrow of time","Boltzmann's H-theorem, the second law and the Page curve are all statements about when coarse-grained entropy can change."]];
 const $=s=>document.querySelector(s);
-const tabs=[["cat","Catalogue"],["con","Connections"],["calc","Calculators"]];
+const tabs=[["cat","Catalogue"],["con","Connections"],["calc","Calculators"],["hk","Hyperkähler"]];
 $("#nav").innerHTML=tabs.map(t=>`<button class="tab" role="tab" id="tab-${t[0]}" aria-controls="${t[0]}" data-t="${t[0]}">${t[1]}</button>`).join("");
 tabs.forEach(t=>{const p=$("#"+t[0]);p.setAttribute("role","tabpanel");p.setAttribute("aria-labelledby","tab-"+t[0]);p.tabIndex=0});
 function show(id){tabs.forEach(t=>$("#"+t[0]).classList.toggle("hide",t[0]!=id));document.querySelectorAll(".tab").forEach(b=>{const on=b.dataset.t==id;b.classList.toggle("on",on);b.setAttribute("aria-selected",on);b.tabIndex=on?0:-1})}
@@ -204,4 +204,29 @@ $("#r2").innerHTML=st([["S / k = ln W",lc.toFixed(2)],["S in bits",(lc/Math.LN2)
 function d3(){const e=+$("#bm").value;$("#bmv").textContent=e.toFixed(1);
 const st3=[["Mass (kg)",sci(Math.log10(1.989e30)+e)+" kg"],["S / k",sci(Math.log10(1.049e77)+2*e)],["S in bits",sci(Math.log10(1.049e77/Math.LN2)+2*e)],["Hawking T (K)",sci(Math.log10(6.17e-8)-e)+" K"]];$("#r3").innerHTML=st(st3)}
 ["w0","w1","w2","w3","al"].forEach(i=>$("#"+i).oninput=d1);$("#gN").oninput=$("#gn").oninput=d2;$("#bm").oninput=d3;d1();d2();d3();
+
+// hyperkahler
+$("#hk").innerHTML=`<div class="card"><h2>Counting on hyperkähler surfaces</h2><p>For a complex surface X, <code>Σ χ(Hilb^n X) qⁿ = ∏(1−qᵐ)^(−χ(X))</code>. A k-center Gibbons-Hawking space has χ = k and K3 has χ = 24. Entropy here is the heuristic <code>S = ln χ</code>, treating the Euler characteristic as a BPS degeneracy.</p>
+${sl("hc","χ(X), e.g. centers k",1,24,24)}${sl("hn","n (points)",1,40,10)}
+<div class="row"><button class="chip" id="hk3">Set K3 (χ = 24)</button></div>
+<svg id="hsv" viewBox="0 0 400 150" width="100%" role="img" aria-label="Entropy versus n"></svg>
+<div class="grid" id="hs" role="status" aria-live="polite"></div></div>
+<details open><summary>1. Counting: Göttsche and Mukai</summary><p>Hilb^n(K3) is a moduli space of sheaves with Mukai vector v and v² = 2n − 2 (dimension 2v² + 4 = 4n). The count depends only on v², giving S ≈ 4π√(v²/2 + 1) = 4π√n at large n. Heterotic-IIA duality ties this to the same 1/η²⁴ degeneracy of Dabholkar-Harvey string states.</p></details>
+<details open><summary>2. Sym^N(K3) and the D1-D5 black hole</summary><p>The Strominger-Vafa count comes from the CFT on Sym^N(K3), with c = 6N, via the Cardy formula S = 2π√(Q₁Q₅n). Hilb^N(K3) is its resolution. The 4π√n above is the closely related Hilbert-scheme count, not the Strominger-Vafa formula itself.</p></details>
+<details open><summary>3. Gravitational instantons and the Euclidean action</summary><p>Gibbons-Hawking and Taub-NUT metrics are Ricci-flat, so the bulk action vanishes (R = 0) and the action comes from boundary terms and from nut and bolt fixed points. This uses the same method as horizon entropy, but it is a different object. For Taub-NUT the entropy is subtle and is not simply area/4.</p></details>
+<details open><summary>4. Taub-NUT and the 4D-5D lift</summary><p>Taub-NUT is the Kaluza-Klein monopole. A black hole at its center looks 5D at distances small compared with the circle and 4D at large distances (Gaiotto-Strominger-Yin). The constant ε in the Gibbons-Hawking harmonic function sets the circle size at infinity, so it moves between the two regimes.</p></details>
+<details open><summary>5. Ricci flow and Perelman entropy</summary><p>Ricci-flat metrics, hyperkähler ones included, are fixed points of Ricci flow and stationary points of Perelman's functionals. Stability of compact hyperkähler metrics such as K3 has been studied (Kröncke); check the literature before relying on it.</p></details>
+<details open><summary>6. What this tab does not do</summary><p>Hyperkähler metrics have no entropy of their own. The Euler-characteristic count is a heuristic that ignores Witten-index signs and charge refinement. Kummer counts use χ = (n+1)³σ(n+1) because T⁴ has χ = 0.</p></details>`;
+function hcoef(k,N){const a=Array(N+1).fill(0n);a[0]=1n;for(let m=1;m<=N;m++)for(let r=0;r<k;r++)for(let j=m;j<=N;j++)a[j]+=a[j-m];return a}
+function lnB(x){const t=x.toString();return t.length<=15?Math.log(Number(t)):(t.length-15)*Math.LN10+Math.log(Number(t.slice(0,15)))}
+function fmt(x){const t=x.toString();return t.length>12?t[0]+"."+t.slice(1,4)+"×10^"+(t.length-1):t}
+function sig(m){let r=0;for(let d=1;d<=m;d++)if(m%d==0)r+=d;return r}
+function dH(){const k=+$("#hc").value,n=+$("#hn").value;$("#hcv").textContent=k;$("#hnv").textContent=n;
+const a=hcoef(k,40),S=a.map(lnB),C=i=>2*Math.PI*Math.sqrt(k*i/6),km=(n+1)**3*sig(n+1);
+$("#hs").innerHTML=st([["χ(Hilb^n X)",fmt(a[n])],["S = ln χ",S[n].toFixed(2)],["Cardy 2π√(χn/6)",C(n).toFixed(2)],["Mukai v² (K3 only)",k==24?2*n-2:"n/a"],["Kummer K_n(T⁴) χ",km],["Kummer S",Math.log(km).toFixed(2)]]);
+const ym=C(40)*1.05,X=i=>10+(i-1)/39*380,Y=v=>140-v/ym*128;let p="",c="";
+for(let i=1;i<=40;i++){p+=X(i)+","+Y(S[i])+" ";c+=X(i)+","+Y(C(i))+" "}
+$("#hsv").innerHTML=`<polyline points="${p}" fill="none" stroke="var(--ac)" stroke-width="2"/><polyline points="${c}" fill="none" stroke="var(--mu)" stroke-dasharray="4 3"/><circle cx="${X(n)}" cy="${Y(S[n])}" r="5" fill="var(--ac)"/><text x="10" y="12" font-size="11" fill="var(--mu)">Solid: ln χ. Dashed: Cardy growth.</text>`;
+$("#hsv").setAttribute("aria-label","Entropy versus n for chi="+k+"; S at n="+n+" is "+S[n].toFixed(2))}
+$("#hc").oninput=$("#hn").oninput=dH;$("#hk3").onclick=()=>{$("#hc").value=24;dH()};dH();
 </script></body></html>
