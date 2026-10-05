@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Entropy Explorer</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f6f7fb;--card:#fff;--tx:#1b2033;--mu:#5d6580;--ac:#c2410c;--ac2:#ffedd5;--bd:#e4ddd5;--onac:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15130f;--card:#201c16;--tx:#f0ebe3;--mu:#b0a698;--ac:#fb923c;--ac2:#3a2a18;--bd:#352f26;--onac:#15130f}}
+:root[data-theme="dark"]{--bg:#15130f;--card:#201c16;--tx:#f0ebe3;--mu:#b0a698;--ac:#fb923c;--ac2:#3a2a18;--bd:#352f26;--onac:#15130f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+main{max-width:980px;margin:0 auto;padding:18px 14px 60px}
+h1{font-size:1.5rem;margin:0}.sub{color:var(--mu);margin:2px 0 14px}
+nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px}
+button,input{font:inherit;color:inherit}
+.tab,.chip{border:1px solid var(--bd);background:var(--card);border-radius:999px;padding:6px 14px;cursor:pointer;white-space:nowrap;min-height:40px}
+.tab.on,.chip.on{background:var(--ac);color:var(--onac);border-color:var(--ac)}
+:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+input[type=search]{width:100%;padding:10px 14px;border:1px solid var(--bd);border-radius:10px;background:var(--card)}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;align-items:center}
+details,.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;margin:8px 0;padding:10px 14px}
+summary{cursor:pointer;font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tag{font-size:.72rem;font-weight:500;background:var(--ac2);color:var(--ac);border-radius:6px;padding:1px 8px}
+dl{margin:8px 0 0;display:grid;grid-template-columns:100px 1fr;gap:4px 10px}dt{color:var(--mu)}dd{margin:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:10px}
+.stat{background:var(--ac2);border-radius:10px;padding:10px 12px}.stat b{display:block;font-size:1.2rem;color:var(--ac)}
+label{display:block;margin:10px 0 2px;font-weight:600}input[type=range]{width:100%}
+code{background:var(--ac2);border-radius:5px;padding:1px 6px}
+.hide{display:none}.muted{color:var(--mu)}h2{font-size:1.1rem;margin:0 0 4px}
+</style></head><body><main>
+<h1>Entropy Explorer</h1>
+<p class="sub">One idea, many forms: thermodynamic, information, quantum, gravitational, and dynamical entropy.</p>
+<nav id="nav" role="tablist" aria-label="Sections"></nav>
+<div id="cat"></div><div id="con" class="hide"></div><div id="calc" class="hide"></div>
+</main>
+<script>
+const E=[
+["Thermodynamics","Clausius","dS = δQ_rev / T","State function; ΔS ≥ 0 for an isolated system.","Second law; the macroscopic arrow of time."],
+["Thermodynamics","Boltzmann","S = k ln W","W counts the microstates compatible with a macrostate.","Bridge from mechanics to thermodynamics."],
+["Thermodynamics","Gibbs","S = −k Σ pᵢ ln pᵢ","Reduces to Boltzmann when all W states are equally likely.","Canonical and grand-canonical ensembles."],
+["Thermodynamics","Sackur-Tetrode","S = Nk [ln(V/(Nλ³)) + 5/2]","Ideal monatomic gas; λ is the thermal wavelength, so ħ enters. Resolves the Gibbs paradox.","Quantum-corrected classical entropy."],
+["Thermodynamics","Residual entropy","S → S₀ as T → 0","Nernst: perfect crystals reach 0; frozen disorder leaves S₀ > 0. Pauling's ice estimate: k ln(3/2) per molecule.","Third law."],
+["Information","Shannon","H = −Σ p log₂ p","Bits; maximal (log₂ n) for the uniform distribution.","Compression limit of a source."],
+["Information","Mutual information","I(X;Y) = H(X) + H(Y) − H(X,Y)","Nonnegative; zero iff X and Y are independent.","Channel capacity."],
+["Information","Differential entropy","h = −∫ f ln f dx","Can be negative. At fixed variance the Gaussian maximizes it: ½ ln(2πeσ²).","Continuous variables."],
+["Information","Rényi","H_α = ln(Σ pᵅ) / (1 − α)","α→1 gives Shannon, α=0 the log of the support size, α→∞ min-entropy.","Cryptography, quantum information."],
+["Information","Min-entropy","H_∞ = −ln max p","Governs the worst-case guessing probability.","Randomness extraction."],
+["Information","Tsallis","S_q = (1 − Σ pᵠ) / (q − 1)","Nonadditive; q→1 recovers Shannon-Gibbs.","Long-range systems (physical role debated)."],
+["Information","Relative entropy (KL)","D(p‖q) = Σ p ln(p/q)","Nonnegative, asymmetric, not a metric.","Variational inference; free-energy differences."],
+["Information","Cross-entropy","H(p,q) = H(p) + D(p‖q)","Minimizing it over q fits q to p.","Classifier training loss."],
+["Information","Maximum entropy (Jaynes)","maximize H subject to constraints","A fixed mean energy yields Boltzmann weights.","Statistical mechanics as inference."],
+["Quantum","von Neumann","S = −Tr ρ ln ρ","Zero for pure states, at most ln d. Equals the Shannon entropy of ρ's eigenvalues.","Quantum analogue of Gibbs/Shannon."],
+["Quantum","Entanglement entropy","S_A = −Tr ρ_A ln ρ_A","For a pure bipartite state S_A = S_B.","Area laws in many-body ground states."],
+["Quantum","Quantum relative entropy","S(ρ‖σ) = Tr ρ(ln ρ − ln σ)","Decreases under quantum channels.","Resource theories; second laws."],
+["Quantum","Page curve","S_rad rises, then falls after the Page time","Entropy of Hawking radiation if evaporation is unitary.","Black hole information paradox."],
+["Gravity","Bekenstein-Hawking","S = k c³ A / (4 G ħ)","Proportional to horizon area, not volume. A solar-mass black hole has about 10⁷⁷ k.","Black hole thermodynamics."],
+["Gravity","Gibbons-Hawking horizon","S = A / 4G (de Sitter horizon)","Cosmological horizons carry entropy and temperature. Derived from the Euclidean action.","Links to gravitational instantons."],
+["Gravity","Wald entropy","S = −2π ∮ (∂L/∂R_abcd) ε_ab ε_cd","Noether-charge entropy; reduces to A/4G for general relativity.","Higher-curvature gravity."],
+["Gravity","Ryu-Takayanagi","S_A = Area(γ_A) / 4G","Entanglement entropy as a minimal surface in the bulk.","Holography (AdS/CFT)."],
+["Gravity","Bekenstein bound","S ≤ 2π k R E / (ħ c)","Caps the entropy of a region of radius R and energy E.","Holographic principle."],
+["Dynamics & computation","Kolmogorov-Sinai","h_KS = sup over partitions of the entropy rate","Information production rate; Pesin relates it to positive Lyapunov exponents.","Chaos."],
+["Dynamics & computation","Topological entropy","h_top = lim (1/n) ln N(n, ε)","Exponential growth rate of distinguishable orbits.","Dynamical systems."],
+["Dynamics & computation","Kolmogorov complexity","K(x) = length of the shortest program for x","Uncomputable; on average matches Shannon entropy up to a constant.","Algorithmic randomness."],
+["Dynamics & computation","Perelman entropy","functionals F and W","Monotone along Ricci flow; Ricci-flat metrics, hyperkähler included, are fixed points of the flow.","Geometric analysis."],
+["Dynamics & computation","Landauer limit","E ≥ kT ln 2 per erased bit","About 2.9×10⁻²¹ J at 300 K.","Thermodynamics of computation."],
+["Thermodynamics","Clausius inequality","∮ δQ/T ≤ 0","Equality only for reversible cycles; this is what lets S be defined as a state function.","Foundation of the second law."],
+["Thermodynamics","Heat-capacity route","S(T) = ∫₀ᵀ C(T′)/T′ dT′","Absolute entropies from calorimetry, anchored by the third law.","Tabulated standard molar entropies."],
+["Thermodynamics","Entropy of mixing","ΔS = −nR Σ xᵢ ln xᵢ","Ideal gases or solutions; zero when the gases are identical (Gibbs paradox).","Solubility, osmosis."],
+["Thermodynamics","Phase transitions","ΔS = L / T","Latent heat over transition temperature; melting ice is about 22 J/(mol·K).","First-order transitions."],
+["Thermodynamics","Free energies","F = U − TS, G = H − TS","Minimized at equilibrium; entropy competes with energy as T rises.","Chemical equilibrium, phase diagrams."],
+["Thermodynamics","Carnot efficiency","η = 1 − T_c/T_h","Follows from zero total entropy change in a reversible cycle.","Limits on engines and refrigerators."],
+["Thermodynamics","Entropy production","dS/dt = σ ≥ 0","Prigogine: near equilibrium, steady states minimize σ. Onsager reciprocity governs the linear regime.","Irreversible thermodynamics, dissipative structures."],
+["Statistical mechanics","Microcanonical","S = k ln Ω(E), 1/T = ∂S/∂E","Temperature is defined as the slope of entropy against energy.","Isolated systems."],
+["Statistical mechanics","Negative temperature","T < 0 when ∂S/∂E < 0","Needs a bounded spectrum (e.g. nuclear spins); such states are hotter than any positive T.","Population inversion, lasers."],
+["Statistical mechanics","Boltzmann H-theorem","H = ∫ f ln f d³v, dH/dt ≤ 0","Follows from the Boltzmann equation with molecular chaos; Loschmidt and Zermelo objected.","Origin of irreversibility."],
+["Statistical mechanics","Gibbs paradox","S carries −k ln N!","Indistinguishability makes entropy extensive.","Why identical particles matter classically."],
+["Statistical mechanics","Fluctuation theorems","⟨e^(−W/kT)⟩ = e^(−ΔF/kT) (Jarzynski)","Crooks: P_F(W)/P_R(−W) = e^((W−ΔF)/kT). Individual runs may violate the second law; averages do not.","Single-molecule experiments."],
+["Statistical mechanics","Ising model","S/spin → ln 2 as T → ∞","Ferromagnet: S → 0 as T → 0; heat capacity is singular at T_c in 2D.","Phase transitions, critical phenomena."],
+["Statistical mechanics","Szilard engine","W ≤ kT ln 2 per bit","One bit of measurement lets a demon extract at most this much work.","Maxwell's demon."],
+["Information","Joint and conditional","H(X,Y) = H(X) + H(Y|X)","Chain rule; conditioning never raises entropy.","Basic bookkeeping."],
+["Information","Hartley","H₀ = log n","Shannon with no probabilities; equals Rényi α = 0.","Early information measure."],
+["Information","Entropy rate","h = lim H(X₁…Xₙ)/n","For a Markov chain: −Σ πᵢ Pᵢⱼ ln Pᵢⱼ.","Stochastic processes."],
+["Information","Typical set (AEP)","about 2^(nH) sequences of probability about 2^(−nH)","Nearly all probability sits on these sequences.","Why compression works."],
+["Information","Source coding","H ≤ L < H + 1","Expected length of an optimal prefix (Huffman) code.","Lossless compression."],
+["Information","Channel capacity","C = max I(X;Y)","Binary symmetric channel: 1 − H₂(p).","Noisy-channel coding theorem."],
+["Information","Rate-distortion","R(D) = min I(X;X̂)","Minimum rate to reach distortion D.","Lossy compression."],
+["Information","Data processing","I(X;Z) ≤ I(X;Y) for X→Y→Z","Processing cannot create information.","Basis of many bounds."],
+["Information","Jensen-Shannon","JSD = ½D(p‖m) + ½D(q‖m)","Symmetric and bounded; its square root is a metric.","Comparing distributions."],
+["Information","Fisher information link","D(p_θ‖p_θ+dθ) ≈ ½ I(θ) dθ²","de Bruijn identity ties entropy growth under Gaussian noise to Fisher information.","Information geometry."],
+["Information","Entropy power inequality","N(X+Y) ≥ N(X) + N(Y), N = e^(2h)/(2πe)","Equality for independent Gaussians.","Network information theory."],
+["Information","Transfer entropy","T_Y→X = I(X_{t+1}; Y_t | X_t)","Directional information flow between time series.","Causality detection."],
+["Information","Permutation / sample entropy","Bandt-Pompe ordinal patterns","Complexity of noisy time series.","EEG, heart-rate analysis."],
+["Information","Information bottleneck","min I(X;T) − β I(T;Y)","Compress X while keeping what predicts Y.","Representation learning."],
+["Information","Password entropy","L log₂ N bits","Eight random lowercase letters give about 37.6 bits.","Security estimates."],
+["Quantum","Quantum conditional","S(A|B) = S(AB) − S(B)","Can be negative, a signature of entanglement.","Quantum state merging."],
+["Quantum","Strong subadditivity","S(ABC) + S(B) ≤ S(AB) + S(BC)","Lieb-Ruskai theorem.","Constraint on all quantum states."],
+["Quantum","Holevo bound","χ = S(ρ) − Σ pᵢ S(ρᵢ)","A qubit carries at most one accessible bit.","Quantum channel capacity."],
+["Quantum","Area vs volume law","S_A ∝ boundary or volume","Gapped ground states obey an area law; thermal and typical states give a volume law.","Many-body physics, ETH."],
+["Quantum","Calabrese-Cardy","S = (c/3) ln(ℓ/a)","Interval in an infinite critical chain; c is the central charge.","1+1D conformal field theory."],
+["Quantum","Topological entanglement","S = αL − γ, γ = ln D","D is the total quantum dimension.","Topological order."],
+["Quantum","Page value","S ≈ ln d_A − d_A/(2 d_B)","Average entanglement of a random pure state, d_A ≤ d_B.","Black hole evaporation."],
+["Quantum","Modular Hamiltonian","ρ_A = e^(−K)/Z, S = ⟨K⟩ + ln Z","For Rindler wedges K is 2π times the boost generator (Bisognano-Wichmann).","Algebraic QFT."],
+["Gravity","Hawking temperature","T = ħc³ / (8πGMk)","With S = A/4G it satisfies the first law dM = T dS.","Hawking radiation."],
+["Gravity","Unruh effect","T = ħa / (2πck)","An accelerating observer sees a thermal bath.","Horizon thermodynamics."],
+["Gravity","Generalized second law","δ(S_matter + A/4G) ≥ 0","Total entropy outside the horizon never decreases.","Bekenstein's resolution of the thermodynamic paradox."],
+["Gravity","Generalized entropy and islands","S_gen = A/4G + S_bulk","Extremizing over surfaces (quantum extremal surfaces) reproduces the Page curve.","Information paradox."],
+["Gravity","Gravitational path integral","Z = e^(−I), S = (1 − β∂_β) ln Z","Gibbons-Hawking: entropy from the Euclidean on-shell action.","Instanton computations."],
+["Gravity","Cardy / Strominger-Vafa","S = 2π√(c L₀/6)","Brown-Henneaux central charge gives BTZ entropy; D-brane counting matched A/4G for BPS black holes.","String microstate counting."],
+["Gravity","Göttsche count","Σ χ(Hilb^n X) qⁿ = ∏(1−qᵐ)^(−χ(X))","S = ln χ grows like 2π√(χn/6); K3 gives 4π√n.","Hyperkähler and string theory."],
+["Gravity","Bousso bound","S through a light sheet ≤ A/4G","Covariant version of the holographic bound.","Holographic principle."],
+["Gravity","Entropic gravity","F = T ∇S","Verlinde: gravity as an emergent entropic force.","Speculative; debated."],
+["Cosmology","Photon gas","s = (4/3) a T³","About 3.6 k per photon.","Black-body radiation."],
+["Cosmology","CMB entropy","about 10⁸⁹ k","Photons in the observable universe.","Early universe."],
+["Cosmology","Cosmic entropy budget","about 10¹⁰⁴ k","Dominated by supermassive black holes (Egan and Lineweaver).","Cosmic evolution."],
+["Cosmology","de Sitter entropy","S = π k c⁵ / (G ħ H²)","About 10¹²² k for the observed Hubble rate.","Maximum entropy of the universe."],
+["Cosmology","Past Hypothesis / Penrose","low initial gravitational entropy","Weyl curvature hypothesis: the early universe was smooth, not generic.","Origin of the arrow of time."],
+["Cosmology","Heat death","S → S_max","Entropy approaches its maximum; no free energy gradients remain.","Far-future cosmology."],
+["Dynamics & computation","Pesin formula","h_KS = Σ λᵢ⁺","Sum of positive Lyapunov exponents (for SRB measures).","Chaos."],
+["Dynamics & computation","Shannon-McMillan-Breiman","−(1/n) ln μ(x₁…xₙ) → h","Almost surely, for ergodic sources.","Ergodic theory."],
+["Dynamics & computation","Ornstein theory","Bernoulli shifts are classified by h","Equal entropy implies isomorphism.","Ergodic theory."],
+["Dynamics & computation","Statistical complexity","C_μ = H[causal states]","Crutchfield epsilon-machine; excess entropy measures memory.","Complexity science."],
+["Dynamics & computation","Lempel-Ziv","compressed length/n → h","Universal compression approaches the entropy rate.","Practical entropy estimation."],
+["Dynamics & computation","Cellular automata","reversible rules conserve fine-grained S","Coarse-grained entropy still rises.","Models of irreversibility."],
+["Mathematics","Large deviations (Sanov)","P(empirical ≈ q) ≈ e^(−nD(q‖p))","KL divergence is the rate function.","Probability theory."],
+["Mathematics","Gibbs variational principle","F = min over ρ of ⟨E⟩ − TS","Equilibrium states minimize free energy.","Thermodynamic formalism."],
+["Mathematics","Maximum-entropy laws","uniform, exponential, Gaussian","Given a support, a mean, or a variance respectively.","Choosing priors."],
+["Mathematics","Log-Sobolev inequality","Ent(f²) ≤ 2C ∫|∇f|² dμ","Implies concentration of measure.","Analysis on manifolds."],
+["Mathematics","Entropy solutions (PDE)","Lax entropy condition","Selects the physical weak solution with shocks.","Conservation laws."],
+["Mathematics","Entropic optimal transport","W_ε with Sinkhorn iterations","Entropy regularization makes transport fast to compute.","Machine learning."],
+["Mathematics","Graph entropy","Körner; von Neumann via Laplacian","Measures structure or complexity of a graph.","Network science."],
+["Mathematics","Free entropy","Voiculescu","Entropy for noncommutative random variables.","Operator algebras."],
+["Mathematics","Entropy and dimension","dim μ = h/λ","Ledrappier-Young: for conformal systems.","Fractal geometry."],
+["Mathematics","Algebraic entropy","growth of degrees of iterates","Bellon-Viallet; for rational maps.","Integrability tests."],
+["Mathematics","Stirling counting","ln C(N,n) ≈ N H(n/N)","Why combinatorial counts become Shannon entropy.","Derivations of Boltzmann-Gibbs."],
+["Life and applications","Information gain","IG = H(parent) − Σ wᵢ H(childᵢ)","Splits a decision tree node.","Machine learning."],
+["Life and applications","Maximum-entropy RL","J = E[r + α H(π)]","Soft actor-critic rewards randomness for exploration.","Reinforcement learning."],
+["Life and applications","Variational free energy","F = D(q‖p(z|x)) − ln p(x)","ELBO is its negative; the free energy principle applies it to brains (contested).","Variational inference, neuroscience."],
+["Life and applications","Ecological diversity","H′ = −Σ p ln p; Hill numbers exp(H_α)","Simpson index is 1 − Σp².","Biodiversity."],
+["Life and applications","Theil index","T = ln N − H(shares)","Inequality measured as distance from uniform shares.","Economics."],
+["Life and applications","Language","about 1 bit per character","Shannon's 1951 guessing estimate for English with context.","Linguistics, compression."],
+["Life and applications","Sequence logos","information = 2 − H bits per DNA site","Conserved positions have high information.","Bioinformatics."],
+["Life and applications","Life and entropy","Schrödinger's negative entropy","Organisms stay ordered by exporting entropy. Earth absorbs visible sunlight and emits roughly 20 times as many infrared photons.","Biophysics."],
+["Life and applications","Eyring equation","k = (k_BT/h) e^(ΔS‡/R) e^(−ΔH‡/RT)","Activation entropy affects reaction rates.","Chemical kinetics."],
+["Life and applications","Hydrophobic effect","−TΔS dominates","Ordering of water around nonpolar groups drives protein folding.","Biochemistry."],
+["Life and applications","High-entropy alloys","S_config = −R Σ xᵢ ln xᵢ","Equimolar five-element alloys reach R ln 5 ≈ 1.61 R.","Materials science."],
+["Life and applications","Cryptographic randomness","NIST SP 800-90B min-entropy estimates","Security rests on min-entropy, not Shannon.","Random number generation."],
+["Life and applications","Image thresholding","Kapur maximum-entropy method","Chooses the threshold that maximizes combined entropy.","Image processing."],
+["Life and applications","Integrated information","Φ in IIT","Entropy-based consciousness measure; contested.","Neuroscience."]];
+const CON=[["Same functional form","Boltzmann, Gibbs, Shannon and von Neumann all take the form −Σ p ln p. One bit equals k ln 2 ≈ 9.57×10⁻²⁴ J/K."],
+["Information is physical","Landauer: erasing a bit costs at least kT ln 2 of heat. This resolves Maxwell's demon."],
+["Inference","Jaynes: maximizing Shannon entropy under constraints reproduces the Boltzmann distribution."],
+["Quantum","Entanglement entropy of a subsystem is its thermodynamic-looking entropy, and it grows when you trace out partners."],
+["Gravity","Horizon entropy scales with area, which motivated holography. The generalized second law applies to matter entropy plus A/4G."],
+["Counting","Boltzmann, Hartley, typical sets, Stirling and Göttsche all reduce entropy to the log of a count."],["Geometry","Information geometry, Perelman flow and gravitational instantons treat entropy as a function on spaces of states or metrics."],["Arrow of time","Boltzmann's H-theorem, the second law and the Page curve are all statements about when coarse-grained entropy can change."]];
+const $=s=>document.querySelector(s);
+const tabs=[["cat","Catalogue"],["con","Connections"],["calc","Calculators"]];
+$("#nav").innerHTML=tabs.map(t=>`<button class="tab" role="tab" id="tab-${t[0]}" aria-controls="${t[0]}" data-t="${t[0]}">${t[1]}</button>`).join("");
+tabs.forEach(t=>{const p=$("#"+t[0]);p.setAttribute("role","tabpanel");p.setAttribute("aria-labelledby","tab-"+t[0]);p.tabIndex=0});
+function show(id){tabs.forEach(t=>$("#"+t[0]).classList.toggle("hide",t[0]!=id));document.querySelectorAll(".tab").forEach(b=>{const on=b.dataset.t==id;b.classList.toggle("on",on);b.setAttribute("aria-selected",on);b.tabIndex=on?0:-1})}
+$("#nav").onclick=e=>{if(e.target.dataset.t)show(e.target.dataset.t)};
+$("#nav").onkeydown=e=>{const ids=tabs.map(t=>t[0]),i=ids.indexOf(e.target.dataset.t),N=ids.length;if(i<0)return;
+const n={ArrowRight:(i+1)%N,ArrowLeft:(i+N-1)%N,Home:0,End:N-1}[e.key];if(n===undefined)return;e.preventDefault();show(ids[n]);$("#tab-"+ids[n]).focus()};
+show("cat");
+// catalogue
+let grp="All",q="";const groups=["All",...new Set(E.map(s=>s[0]))];
+$("#cat").innerHTML=`<input type="search" id="q" aria-label="Search entropies" placeholder="Search entropies, formulas, roles…"><div class="row" id="chips" role="group" aria-label="Filter by field"></div><div class="row"><button class="chip" id="exp">Expand all</button><button class="chip" id="col">Collapse all</button><span class="muted" id="cnt" role="status" aria-live="polite"></span></div><div id="list"></div>`;
+function drawCat(){
+const fg=document.activeElement&&document.activeElement.dataset?document.activeElement.dataset.g:null;
+$("#chips").innerHTML=groups.map(g=>`<button class="chip ${g==grp?"on":""}" data-g="${g}" aria-pressed="${g==grp}">${g}</button>`).join("");
+if(fg!=null){const b=[...document.querySelectorAll("#chips .chip")].find(c=>c.dataset.g==fg);if(b)b.focus()}
+const r=E.filter(s=>(grp=="All"||s[0]==grp)&&s.join(" ").toLowerCase().includes(q));
+$("#cnt").textContent=r.length+" of "+E.length+" entropies";
+$("#list").innerHTML=r.map(s=>`<details><summary>${s[1]}<span class="tag">${s[0]}</span></summary><dl><dt>Formula</dt><dd><code>${s[2]}</code></dd><dt>Key facts</dt><dd>${s[3]}</dd><dt>Role</dt><dd>${s[4]}</dd></dl></details>`).join("")||'<p class="muted">No matches.</p>'}
+$("#q").oninput=e=>{q=e.target.value.toLowerCase();drawCat()};
+$("#chips").onclick=e=>{if(e.target.dataset.g){grp=e.target.dataset.g;drawCat()}};
+$("#exp").onclick=()=>$("#list").querySelectorAll("details").forEach(d=>d.open=true);
+$("#col").onclick=()=>$("#list").querySelectorAll("details").forEach(d=>d.open=false);
+drawCat();
+// connections
+$("#con").innerHTML=CON.map(c=>`<details open><summary>${c[0]}</summary><p>${c[1]}</p></details>`).join("");
+// calculators
+const sl=(id,l,mn,mx,v,st)=>`<label for="${id}">${l}: <span id="${id}v"></span></label><input type="range" id="${id}" min="${mn}" max="${mx}" step="${st||1}" value="${v}">`;
+$("#calc").innerHTML=`<div class="card"><h2>1. Distribution entropies</h2><p class="muted">Set four weights; they are normalized to probabilities.</p>
+${sl("w0","Weight A",0,10,5)}${sl("w1","Weight B",0,10,3)}${sl("w2","Weight C",0,10,1)}${sl("w3","Weight D",0,10,1)}${sl("al","α (Rényi) and q (Tsallis)",0,5,2,0.1)}
+<div class="grid" id="r1" role="status" aria-live="polite"></div></div>
+<div class="card"><h2>2. Boltzmann gas in a box</h2><p class="muted">N distinguishable particles; n are in the left half. W = C(N, n).</p>
+${sl("gN","N particles",2,1000,100)}${sl("gn","n in left half",0,100,50)}
+<div class="grid" id="r2" role="status" aria-live="polite"></div></div>
+<div class="card"><h2>3. Schwarzschild black hole</h2><p class="muted">Bekenstein-Hawking entropy and Hawking temperature versus mass.</p>
+${sl("bm","log₁₀(M / M☉)",-20,10,0,0.1)}
+<div class="grid" id="r3" role="status" aria-live="polite"></div></div>`;
+const st=(a)=>a.map(r=>`<div class="stat">${r[0]}<b>${r[1]}</b></div>`).join("");
+const sci=l=>{const b=Math.floor(l);return (10**(l-b)).toFixed(2)+"×10^"+b};
+function d1(){const w=[0,1,2,3].map(i=>+$("#w"+i).value),a=+$("#al").value;[0,1,2,3].forEach(i=>$("#w"+i+"v").textContent=w[i]);$("#alv").textContent=a.toFixed(1);
+const s=w.reduce((x,y)=>x+y,0);if(!s){$("#r1").innerHTML='<p class="muted">Give at least one weight above zero.</p>';return}
+const p=w.map(x=>x/s).filter(x=>x>0),Hn=-p.reduce((x,y)=>x+y*Math.log(y),0),one=Math.abs(a-1)<1e-9,sp=p.reduce((x,y)=>x+y**a,0);
+const R=one?Hn:Math.log(sp)/(1-a),T=one?Hn:(1-sp)/(a-1);
+$("#r1").innerHTML=st([["Shannon (bits)",(Hn/Math.LN2).toFixed(3)],["Rényi α (bits)",(R/Math.LN2).toFixed(3)],["Tsallis q (nats)",T.toFixed(3)],["Min-entropy (bits)",(-Math.log(Math.max(...p))/Math.LN2).toFixed(3)],["KL to uniform (bits)",((Math.log(4)-Hn)/Math.LN2).toFixed(3)]])}
+const lf=[0];for(let i=1;i<=1000;i++)lf[i]=lf[i-1]+Math.log(i);
+function d2(){const N=+$("#gN").value;$("#gn").max=N;const n=Math.min(+$("#gn").value,N);$("#gNv").textContent=N;$("#gnv").textContent=n;
+const lc=lf[N]-lf[n]-lf[N-n],lp=(lc-N*Math.LN2)/Math.LN10;
+$("#r2").innerHTML=st([["S / k = ln W",lc.toFixed(2)],["S in bits",(lc/Math.LN2).toFixed(2)],["Probability of this split","10^"+lp.toFixed(2)],["Maximum S / k (N/2 split)",(lf[N]-lf[Math.floor(N/2)]-lf[N-Math.floor(N/2)]).toFixed(2)]])}
+function d3(){const e=+$("#bm").value;$("#bmv").textContent=e.toFixed(1);
+const st3=[["Mass (kg)",sci(Math.log10(1.989e30)+e)+" kg"],["S / k",sci(Math.log10(1.049e77)+2*e)],["S in bits",sci(Math.log10(1.049e77/Math.LN2)+2*e)],["Hawking T (K)",sci(Math.log10(6.17e-8)-e)+" K"]];$("#r3").innerHTML=st(st3)}
+["w0","w1","w2","w3","al"].forEach(i=>$("#"+i).oninput=d1);$("#gN").oninput=$("#gn").oninput=d2;$("#bm").oninput=d3;d1();d2();d3();
+</script></body></html>
