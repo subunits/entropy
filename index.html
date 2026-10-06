@@ -28,6 +28,42 @@ dl{margin:8px 0 0;display:grid;grid-template-columns:100px 1fr;gap:4px 10px}dt{c
 label{display:block;margin:10px 0 2px;font-weight:600}input[type=range]{width:100%}
 code{background:var(--ac2);border-radius:5px;padding:1px 6px}
 .hide{display:none}.muted{color:var(--mu)}h2{font-size:1.1rem;margin:0 0 4px}
+
+/* Shamrock-inspired badge counter styling */
+#cnt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #14532d;
+  background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 50%, #ecfdf5 100%);
+  border: 1px solid #86efac;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.1);
+  min-height: 40px;
+}
+
+#cnt::before {
+  content: "☘️";
+  font-size: 0.95rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) #cnt {
+    color: #86efac;
+    background: linear-gradient(135deg, #143823 0%, #0d2818 50%, #112e1f 100%);
+    border-color: #1f6838;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+}
+:root[data-theme="dark"] #cnt {
+  color: #86efac;
+  background: linear-gradient(135deg, #143823 0%, #0d2818 50%, #112e1f 100%);
+  border-color: #1f6838;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
 </style></head><body><main>
 <h1>Entropy Explorer</h1>
 <p class="sub">One idea, many forms: thermodynamic, information, quantum, gravitational, and dynamical entropy.</p>
